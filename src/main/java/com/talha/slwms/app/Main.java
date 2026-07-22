@@ -4,6 +4,8 @@ import com.talha.slwms.enums.ShipmentPriority;
 import com.talha.slwms.enums.ShipmentStatus;
 import com.talha.slwms.model.*;
 import com.talha.slwms.service.DeliveryEngine;
+import com.talha.slwms.service.TrackingService;
+import com.talha.slwms.util.BillingUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,11 +33,14 @@ public class Main {
 
         DeliveryEngine deliveryEngine= new DeliveryEngine();
         deliveryEngine.assignAndDispatch(shipment1, v1, 20 );
-        System.out.println(v1.isAvailable());
-        System.out.println(shipment1.getStatus());
-        deliveryEngine.markDelivered(shipment1 ,v1);
-        System.out.println(v1.isAvailable());
-        System.out.println(shipment1.getStatus());
+
+        TrackingService trackingService = new TrackingService();
+        trackingService.getCurrentLocation(shipment1.getShipmentId());
+        System.out.println(BillingUtil.calculateTotal(v1.estimateCost(30)));
+
+
+
+
 
 
     }
