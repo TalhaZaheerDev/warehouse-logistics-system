@@ -2,6 +2,8 @@ package com.talha.slwms.model;
 
 import com.talha.slwms.enums.ShipmentPriority;
 import com.talha.slwms.enums.ShipmentStatus;
+import com.talha.slwms.exception.ShipmentNotFoundException;
+import com.talha.slwms.exception.WarehouseFullException;
 
 import java.util.*;
 
@@ -35,7 +37,7 @@ public class Warehouse {
 
     public void receiveShipment(Shipment shipment) {
        if(shipments.size() >= capacity){
-           throw new IllegalArgumentException("Warehouse " +location +" is full");
+           throw new WarehouseFullException("Warehouse " +location +" is full");
        }
 
        shipment.updateStatus(ShipmentStatus.IN_WAREHOUSE);
@@ -46,7 +48,7 @@ public class Warehouse {
     public Shipment findShipmentById(String shipmentId) {
         Shipment s = shipmentIndex.get(shipmentId);
         if(s==null){
-            throw new IllegalArgumentException("Shipment with id "+shipmentId+" not found");
+            throw new ShipmentNotFoundException("Shipment with id "+shipmentId+" not found");
         }
 
         return s;

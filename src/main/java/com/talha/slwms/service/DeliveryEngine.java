@@ -1,17 +1,19 @@
 package com.talha.slwms.service;
 
 import com.talha.slwms.enums.ShipmentStatus;
+import com.talha.slwms.exception.InvalidWeightException;
+import com.talha.slwms.exception.VehicleUnavailableException;
 import com.talha.slwms.model.Shipment;
 import com.talha.slwms.model.Vehicle;
 
 public class DeliveryEngine {
     public void assignAndDispatch(Shipment shipment, Vehicle vehicle, double distanceKm) {
         if(!vehicle.isAvailable()) {
-            throw new IllegalArgumentException("Vehicle is not available: " +vehicle.getVehicleId());
+            throw new VehicleUnavailableException("Vehicle is not available: " +vehicle.getVehicleId());
         }
 
         if(shipment.getWeightKg() > vehicle.calculateDeliveryCapacity()){
-            throw new IllegalArgumentException("Vehicle Can't carry this shipment's weight");
+            throw new InvalidWeightException("Vehicle Can't carry this shipment's weight");
         }
 
         vehicle.markUnavailable();

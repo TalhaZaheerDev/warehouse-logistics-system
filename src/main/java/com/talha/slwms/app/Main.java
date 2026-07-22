@@ -27,6 +27,7 @@ public class Main {
         warehouse.receiveShipment(shipment2);
         warehouse.receiveShipment(shipment3);
 
+
         Vehicle v1 = new Truck("Hassan", 3);
         Vehicle v2 = new Van("Abrar");
         Vehicle v3 = new Bike("Ahmad");

@@ -2,6 +2,7 @@ package com.talha.slwms.model;
 
 import com.talha.slwms.enums.ShipmentPriority;
 import com.talha.slwms.enums.ShipmentStatus;
+import com.talha.slwms.exception.InvalidWeightException;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -20,7 +21,7 @@ public class Shipment {
             throw new IllegalArgumentException("sender can't be null");
         }
         if(weightKg <= 0) {
-            throw new IllegalArgumentException("weightKg must be positive");
+            throw new InvalidWeightException("weightKg must be positive");
         }
 
         this.shipmentId = UUID.randomUUID().toString();
