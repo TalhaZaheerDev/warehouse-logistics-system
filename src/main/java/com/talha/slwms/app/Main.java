@@ -3,6 +3,7 @@ package com.talha.slwms.app;
 import com.talha.slwms.enums.ShipmentPriority;
 import com.talha.slwms.enums.ShipmentStatus;
 import com.talha.slwms.model.*;
+import com.talha.slwms.report.ReportService;
 import com.talha.slwms.repository.FileStorageUtil;
 import com.talha.slwms.service.DeliveryEngine;
 import com.talha.slwms.service.TrackingService;
@@ -10,6 +11,7 @@ import com.talha.slwms.util.BillingUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class Main {
     public static void main(String[] args) {
@@ -49,14 +51,7 @@ public class Main {
 
 
         FileStorageUtil.writeCustomersToCsv(customers, "data/customers.csv");
-
-
-
-
-
-
         FileStorageUtil.saveObject(warehouse, "data/warehouse_snapshot.ser.");
-
 
 
 
