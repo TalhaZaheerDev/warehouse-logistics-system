@@ -3,6 +3,7 @@ package com.talha.slwms.app;
 import com.talha.slwms.enums.ShipmentPriority;
 import com.talha.slwms.enums.ShipmentStatus;
 import com.talha.slwms.model.*;
+import com.talha.slwms.repository.FileStorageUtil;
 import com.talha.slwms.service.DeliveryEngine;
 import com.talha.slwms.service.TrackingService;
 import com.talha.slwms.util.BillingUtil;
@@ -38,6 +39,23 @@ public class Main {
         TrackingService trackingService = new TrackingService();
         trackingService.getCurrentLocation(shipment1.getShipmentId());
         System.out.println(BillingUtil.calculateTotal(v1.estimateCost(30)));
+
+
+        List<Customer> customers = new ArrayList<>();
+        customers.add(customer1);
+        customers.add(customer2);
+        customers.add(customer3);
+        customers.add(customer4);
+
+
+        FileStorageUtil.writeCustomersToCsv(customers, "data/customers.csv");
+
+
+
+
+
+
+        FileStorageUtil.saveObject(warehouse, "data/warehouse_snapshot.ser.");
 
 
 

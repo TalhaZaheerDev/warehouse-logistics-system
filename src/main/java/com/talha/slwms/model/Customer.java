@@ -1,9 +1,10 @@
 package com.talha.slwms.model;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public class Customer {
+public class Customer implements Serializable {
     private String customerId;
     private String name;
     private String address;

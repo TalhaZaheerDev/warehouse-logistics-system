@@ -5,9 +5,10 @@ import com.talha.slwms.enums.ShipmentStatus;
 import com.talha.slwms.exception.ShipmentNotFoundException;
 import com.talha.slwms.exception.WarehouseFullException;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class Warehouse {
+public class Warehouse implements Serializable {
     private final String warehouseId;
     private final String location;
     private final int capacity;

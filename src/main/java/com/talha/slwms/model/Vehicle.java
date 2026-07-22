@@ -2,9 +2,10 @@ package com.talha.slwms.model;
 
 import com.talha.slwms.enums.VehicleType;
 
+import java.io.Serializable;
 import java.util.UUID;
 
-public abstract class Vehicle {
+public abstract class Vehicle implements Serializable {
     private final String vehicleId;
     private final String driverName;
     private boolean available;

@@ -4,10 +4,11 @@ import com.talha.slwms.enums.ShipmentPriority;
 import com.talha.slwms.enums.ShipmentStatus;
 import com.talha.slwms.exception.InvalidWeightException;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public class Shipment {
+public class Shipment implements Serializable {
     private final String shipmentId;
     private final Customer sender;
     private final String destinationAddress;
