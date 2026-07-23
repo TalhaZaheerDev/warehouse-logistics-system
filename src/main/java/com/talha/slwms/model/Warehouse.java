@@ -36,14 +36,13 @@ public class Warehouse implements Serializable {
         return Collections.unmodifiableList(shipments);
     }
 
-    public void receiveShipment(Shipment shipment) {
-       if(shipments.size() >= capacity){
-           throw new WarehouseFullException("Warehouse " +location +" is full");
-       }
-
-       shipment.updateStatus(ShipmentStatus.IN_WAREHOUSE);
-       shipments.add(shipment);
-       shipmentIndex.put(shipment.getShipmentId(), shipment);
+    public synchronized void receiveShipment(Shipment shipment) {
+        if (shipments.size() >= capacity) {
+            throw new WarehouseFullException("Warehouse " + location + " is full");
+        }
+        shipment.updateStatus(ShipmentStatus.IN_WAREHOUSE);
+        shipments.add(shipment);
+        shipmentIndex.put(shipment.getShipmentId(), shipment);
     }
 
     public Shipment findShipmentById(String shipmentId) {
@@ -56,7 +55,7 @@ public class Warehouse implements Serializable {
     }
 
     //sort by priority weight, descending (Urgent First)
-    public List<Shipment> getShipmentsByPriority(ShipmentPriority priority) {
+    public List<Shipment> getShipmentsByPriority() {
         List<Shipment> copy = new ArrayList<>(shipments);
         copy.sort(Comparator.comparingInt((Shipment s) -> s.getPriority().getWeight()).reversed());
         return copy;
@@ -84,6 +83,16 @@ public class Warehouse implements Serializable {
     public String toString() {
         return "Warehouse{id=" + warehouseId + ", location=" + location +
                 ", load=" + getCurrentLoad() + "/" + capacity + "}";
+    }
+
+    public synchronized void recieveShipment(Shipment shipment) {
+        if(shipments.size() >= capacity){
+            throw new WarehouseFullException("Warehouse " + location + " is full");
+        }
+
+        shipment.updateStatus(ShipmentStatus.IN_WAREHOUSE);
+        shipments.add(shipment);
+        shipmentIndex.put(shipment.getShipmentId(), shipment);
     }
 
 }

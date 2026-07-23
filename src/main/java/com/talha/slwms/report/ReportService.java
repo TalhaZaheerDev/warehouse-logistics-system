@@ -5,41 +5,45 @@ import com.talha.slwms.model.Customer;
 import com.talha.slwms.model.Shipment;
 import com.talha.slwms.model.Warehouse;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ReportService {
-    public double calculateTotalRevenue(List<Shipment> shipments, Map<String, Double> shipmentCosts) {
+
+    // Group shipments by status — one line replaces a manual HashMap-building loop
+    public Map<ShipmentStatus, List<Shipment>> groupByStatus(List<Shipment> shipments) {
         return shipments.stream()
-                .filter(s->s.getStatus() == ShipmentStatus.DELIVERED)
-                .mapToDouble(s->shipmentCosts.getOrDefault(s.getShipmentId(), 0.0))
+                .collect(Collectors.groupingBy(Shipment::getStatus));
+    }
+
+    // Total revenue from delivered shipments only
+    public double totalRevenue(List<Shipment> shipments, Map<String, Double> shipmentCharges) {
+        return shipments.stream()
+                .filter(s -> s.getStatus() == ShipmentStatus.DELIVERED)
+                .mapToDouble(s -> shipmentCharges.getOrDefault(s.getShipmentId(), 0.0))
                 .sum();
     }
 
-    public Map<ShipmentStatus, Long> countByStatus(List<Shipment> shipments) {
-        return shipments.stream()
-                .collect(Collectors.groupingBy(Shipment::getStatus, Collectors.counting()));
+    // Optional: might not find a "top" customer if list is empty
+    public Optional<Customer> topCustomerByShipmentCount(List<Shipment> shipments) {
+        Map<Customer, Long> countByCustomer = shipments.stream()
+                .collect(Collectors.groupingBy(Shipment::getSender, Collectors.counting()));
+
+        return countByCustomer.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey);
     }
 
-    public Optional<Warehouse> findBusiestWarehouse(List<Warehouse> warehouses) {
+    // Average weight of all shipments — Optional in case list is empty
+    public OptionalDouble averageWeight(List<Shipment> shipments) {
+        return shipments.stream()
+                .mapToDouble(Shipment::getWeightKg)
+                .average();
+    }
+
+    // Count shipments per warehouse — "most busy warehouse" building block
+    public Map<Warehouse, Integer> countPerWarehouse(List<Warehouse> warehouses) {
         return warehouses.stream()
-                .max(Comparator.comparingInt(Warehouse::getCurrentLoad));
-    }
-
-    public Optional<Map.Entry<Customer, Long>> findTopCustomer(List<Shipment> shipments) {
-        return shipments.stream()
-                .collect(Collectors.groupingBy(Shipment::getSender, Collectors.counting()))
-                .entrySet().stream()
-                .max(Map.Entry.comparingByValue());
-    }
-
-    public List<Shipment> findPendingShipments(List<Shipment> shipments) {
-        return shipments.stream()
-                .filter(s -> s.getStatus() != ShipmentStatus.DELIVERED
-                        && s.getStatus() != ShipmentStatus.CANCELLED)
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(w -> w, Warehouse::getCurrentLoad));
     }
 }
