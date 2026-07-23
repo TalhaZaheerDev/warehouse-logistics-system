@@ -3,7 +3,16 @@ package com.talha.slwms.service;
 import java.util.*;
 
 public class TrackingService {
+    private static final TrackingService instance = new TrackingService();
     private final Map<String, List<String>> trackingLog = new HashMap<>();
+
+    private TrackingService() {}
+
+    public static TrackingService getInstance() {
+        return instance;
+    }
+
+
 
     public void logLocation(String shipmentId, String Location){
         trackingLog.computeIfAbsent(shipmentId, k -> new ArrayList<>()).add(Location);
