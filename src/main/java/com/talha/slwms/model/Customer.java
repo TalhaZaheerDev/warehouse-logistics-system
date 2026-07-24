@@ -12,7 +12,7 @@ public class Customer implements Serializable {
     private String phone;
     private LocalDateTime registerdAt;
 
-    public  Customer(String name, String address, String email, String phone) {
+    public  Customer(String name, String email, String phone, String address) {
         if(name ==null || name.isBlank()){
             throw new IllegalArgumentException("Customer name can't be empty");
         }
@@ -49,7 +49,8 @@ public class Customer implements Serializable {
 
     @Override
     public String toString() {
-        return "Customer{id=" +customerId+", name"+name+", email"+email+", phone"+phone+"}";
+        return String.format("Customer[id=%s, name=%s, email=%s, phone=%s]",
+                customerId.substring(0, 8), name, email, phone);
     }
 
     @Override

@@ -1,13 +1,12 @@
-package com.talha.slwms.app;
-
-import com.talha.slwms.enums.ShipmentPriority;
+package com.talha.slwms.app;import com.talha.slwms.enums.ShipmentPriority;
 import com.talha.slwms.enums.ShipmentStatus;
 import com.talha.slwms.enums.VehicleType;
-import com.talha.slwms.exception.InvalidWeightException;
-import com.talha.slwms.exception.ShipmentNotFoundException;
 import com.talha.slwms.exception.VehicleUnavailableException;
 import com.talha.slwms.exception.WarehouseFullException;
-import com.talha.slwms.model.*;
+import com.talha.slwms.model.Customer;
+import com.talha.slwms.model.Shipment;
+import com.talha.slwms.model.Vehicle;
+import com.talha.slwms.model.Warehouse;
 import com.talha.slwms.report.ReportService;
 import com.talha.slwms.repository.FileStorageUtil;
 import com.talha.slwms.repository.Repository;
@@ -24,19 +23,39 @@ import java.util.stream.*;
 
 public class Main {
 
+    // ---------- small output helpers: this is what makes console output "look professional" ----------
+
+    private static void section(String title) {
+        System.out.println();
+        System.out.println("=".repeat(70));
+        System.out.println("  " + title.toUpperCase());
+        System.out.println("=".repeat(70));
+    }
+
+    private static void line(String label, Object value) {
+        System.out.printf("  %-28s : %s%n", label, value);
+    }
+
+    private static void expected(String message) {
+        System.out.println("  [handled]  " + message);
+    }
+
     public static void main(String[] args) throws InterruptedException {
 
-        // ---------- CUSTOMERS ----------
-        Customer customer1 = new Customer("Ali Raza", "Lahore","ali@mail.com",   "0301-1111111");
-        Customer customer2 = new Customer("Sara Khan", "Karachi","sara@mail.com",   "0302-2222222");
+        section("Customers");
+        Customer customer1 = new Customer("Ali Raza", "ali@mail.com", "0301-1111111", "Lahore");
+        Customer customer2 = new Customer("Sara Khan", "sara@mail.com", "0302-2222222", "Karachi");
 
-        // Repository<T> = generic storage, reused for any type (Repository pattern)
         Repository<Customer> customerRepo = new Repository<>(Customer::getCustomerId);
         customerRepo.save(customer1);
         customerRepo.save(customer2);
-        System.out.println("Customer lookup: " + customerRepo.findById(customer1.getCustomerId()).orElseThrow());
 
-        // ---------- SHIPMENTS (Builder pattern instead of raw constructor) ----------
+        line("Registered", customer1.getName());
+        line("Registered", customer2.getName());
+        line("Lookup by ID", customerRepo.findById(customer1.getCustomerId()).orElseThrow());
+
+
+        section("Shipments");
         Shipment s1 = new ShipmentBuilder()
                 .sender(customer1).destination("Multan").weight(10).priority(ShipmentPriority.STANDARD)
                 .build();
@@ -48,61 +67,88 @@ public class Main {
         shipmentRepo.save(s1);
         shipmentRepo.save(s2);
 
-        // ---------- WAREHOUSE (Collections, sorting, custom exceptions) ----------
+        line("Created", s1);
+        line("Created", s2);
+
+
+        section("Warehouse");
         Warehouse warehouseA = new Warehouse("Lahore-Hub", 2);
         warehouseA.receiveShipment(s1);
         warehouseA.receiveShipment(s2);
-        try {
-            warehouseA.receiveShipment(new ShipmentBuilder().sender(customer1).destination("X").weight(5).build());
-        } catch (WarehouseFullException e) {
-            System.out.println("Expected: " + e.getMessage());
-        }
-        System.out.println("By priority: " + warehouseA.getShipmentsByPriority());
+        line("Status", warehouseA);
 
-        // ---------- VEHICLES (Factory pattern instead of "new Truck(...)") ----------
+        try {
+            warehouseA.receiveShipment(
+                    new ShipmentBuilder().sender(customer1).destination("X").weight(5).build());
+        } catch (WarehouseFullException e) {
+            expected(e.getMessage());
+        }
+
+        line("Sorted by priority", warehouseA.getShipmentsByPriority().size() + " shipments");
+        warehouseA.getShipmentsByPriority().forEach(s -> System.out.println("    - " + s));
+
+
+        section("Vehicle Fleet");
         Vehicle truck = VehicleFactory.create(VehicleType.TRUCK, "Ali Driver");
         Vehicle van   = VehicleFactory.create(VehicleType.VAN, "Sara Driver");
         Vehicle bike  = VehicleFactory.create(VehicleType.BIKE, "Zain Driver");
-        List<Vehicle> fleet = List.of(truck, van, bike);
-        fleet.forEach(v -> System.out.println(v + " | 50km cost: " + v.estimateCost(50))); // polymorphism/Strategy
 
-        // ---------- DELIVERY ENGINE (Interfaces + dynamic dispatch) ----------
+        for (Vehicle v : List.of(truck, van, bike)) {
+            System.out.printf("    %-6s driver=%-12s capacity=%-8.1fkg  cost/50km=%.2f%n",
+                    v.getType(), v.getDriverName(), v.calculateDeliveryCapacity(), v.estimateCost(50));
+        }
+
+
+        section("Delivery Engine");
         DeliveryEngine deliveryEngine = new DeliveryEngine();
         deliveryEngine.assignAndDispatch(s1, truck, 80);
-        try {
-            deliveryEngine.assignAndDispatch(s2, truck, 30); // truck already busy
-        } catch (VehicleUnavailableException e) {
-            System.out.println("Expected: " + e.getMessage());
-        }
-        deliveryEngine.markDelivered(s1, truck);
+        line("Dispatched", s1.getShipmentId().substring(0, 8) + " via " + truck.getType());
 
-        // ---------- TRACKING (Singleton pattern) ----------
+        try {
+            deliveryEngine.assignAndDispatch(s2, truck, 30);
+        } catch (VehicleUnavailableException e) {
+            expected(e.getMessage());
+        }
+
+        deliveryEngine.markDelivered(s1, truck);
+        line("Delivered & vehicle freed", truck.isAvailable());
+
+
+        section("Tracking");
         TrackingService.getInstance().logLocation(s1.getShipmentId(), "Lahore-Hub");
         TrackingService.getInstance().logLocation(s1.getShipmentId(), "Multan-Delivered");
-        System.out.println("Tracking history: " + TrackingService.getInstance().getHistory(s1.getShipmentId()));
+        line("History", TrackingService.getInstance().getHistory(s1.getShipmentId()));
 
-        // ---------- BILLING (BigDecimal) ----------
-        BigDecimal bill = BillingUtil.calculateTotal(truck.estimateCost(80));
-        System.out.println("Final bill: " + bill);
 
-        // ---------- FILE STORAGE (NIO + Serialization) ----------
+        section("Billing");
+        double rawCharge = truck.estimateCost(80);
+        BigDecimal bill = BillingUtil.calculateTotal(rawCharge);
+        line("Raw charge", rawCharge);
+        line("Final bill (with tax)", bill);
+
+
+        section("File Storage");
         FileStorageUtil.writeCustomersToCsv(customerRepo.findAll(), "data/customers.csv");
+        line("CSV written", "data/customers.csv");
+
         FileStorageUtil.saveObject(warehouseA, "data/warehouseA.ser");
         Warehouse restored = (Warehouse) FileStorageUtil.loadObject("data/warehouseA.ser");
-        System.out.println("Restored warehouse: " + restored);
+        line("Serialized & restored", restored);
 
-        // ---------- REPORTS (Streams, Optional, Collectors) ----------
+
+        section("Reports");
         ReportService reportService = new ReportService();
         List<Shipment> allShipments = shipmentRepo.findAll();
-        Map<String, Double> charges = Map.of(s1.getShipmentId(), truck.estimateCost(80));
+        Map<String, Double> charges = Map.of(s1.getShipmentId(), rawCharge);
 
-        System.out.println("Revenue: " + reportService.totalRevenue(allShipments, charges));
+        line("Revenue (delivered only)", reportService.totalRevenue(allShipments, charges));
         reportService.topCustomerByShipmentCount(allShipments)
                 .ifPresentOrElse(
-                        c -> System.out.println("Top customer: " + c.getName()),
-                        () -> System.out.println("No data"));
+                        c -> line("Top customer", c.getName()),
+                        () -> line("Top customer", "none yet"));
 
-        // ---------- SIMULATION (Threads + ExecutorService + synchronized access) ----------
+
+        section("Simulation (500 customers / 2000 shipments / 20 threads)");
         SimulationEngine simulationEngine = new SimulationEngine();
         List<Customer> simCustomers = simulationEngine.generateCustomers(500);
         List<Warehouse> simWarehouses = IntStream.range(0, 5)
@@ -112,24 +158,34 @@ public class Main {
         simulationEngine.simulateShipment(simCustomers, simWarehouses, 2000);
 
         int totalReceived = simWarehouses.stream().mapToInt(Warehouse::getCurrentLoad).sum();
+        int totalCapacity = simWarehouses.stream().mapToInt(Warehouse::getCapacity).sum();
         long wrongStatus = simWarehouses.stream()
                 .flatMap(w -> w.getShipments().stream())
                 .filter(sh -> sh.getStatus() != ShipmentStatus.IN_WAREHOUSE)
                 .count();
-        System.out.println("Simulated total received: " + totalReceived + " | wrong-status count: " + wrongStatus);
 
-        // ---------- ANALYTICS (reuses ReportService — no new logic needed) ----------
+        line("Total received / capacity", totalReceived + " / " + totalCapacity);
+        line("Wrong-status count (should be 0)", wrongStatus);
+        System.out.println();
+        simWarehouses.forEach(w ->
+                System.out.printf("    %-14s load=%d/%d%n", w.getLocation(), w.getCurrentLoad(), w.getCapacity()));
+
+
+        section("Analytics");
         List<Shipment> allSimShipments = simWarehouses.stream()
                 .flatMap(w -> w.getShipments().stream())
                 .collect(Collectors.toList());
 
         reportService.topCustomerByShipmentCount(allSimShipments)
-                .ifPresent(c -> System.out.println("Most active customer: " + c.getName()));
+                .ifPresent(c -> line("Most active customer", c.getName()));
 
         simWarehouses.stream()
                 .max(Comparator.comparingInt(Warehouse::getCurrentLoad))
-                .ifPresent(w -> System.out.println("Busiest warehouse: " + w));
+                .ifPresent(w -> line("Busiest warehouse", w.getLocation() + " (" + w.getCurrentLoad() + " shipments)"));
 
-        System.out.println("\nALL MODULES + DESIGN PATTERNS EXECUTED SUCCESSFULLY");
+        System.out.println();
+        System.out.println("=".repeat(70));
+        System.out.println("  ALL MODULES + DESIGN PATTERNS EXECUTED SUCCESSFULLY");
+        System.out.println("=".repeat(70));
     }
 }

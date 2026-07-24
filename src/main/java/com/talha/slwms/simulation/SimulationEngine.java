@@ -18,7 +18,7 @@ public class SimulationEngine {
     public List<Customer> generateCustomers(int count){
         List<Customer> customers = new ArrayList<>();
         for(int i = 0; i < count; i++){
-            customers.add(new Customer("Customer" +i, "Address " + i, "cust" +i +"@mail.com", "0300" + i));
+            customers.add(new Customer("Customer" +i,  "cust" +i +"@mail.com", "0300" + i, "Address " + i));
         }
         return customers;
     }
